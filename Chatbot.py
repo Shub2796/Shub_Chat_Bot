@@ -32,7 +32,7 @@ st.markdown(background_style, unsafe_allow_html=True)
 st.title("🤖 Personalized Career Chatbot")
 
 # ---- OPENAI CLIENT ----
-client = OpenAI(api_key="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")  # <-- Replace with your actual key
+client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 # ---- PARSERS ----
 def extract_text_from_pdf(file):
