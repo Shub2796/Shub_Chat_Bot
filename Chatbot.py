@@ -1,38 +1,117 @@
 import streamlit as st
 import os
-from PyPDF2 import PdfReader
-import docx
+import pandas as pd
 import random
 from openai import OpenAI
+from PyPDF2 import PdfReader
+import docx
 from PIL import Image
+import urllib.parse
 
 # ---- CONFIG ----
 st.set_page_config(page_title="Career Bot", layout="wide")
 
-# ---- BACKGROUND STYLING ----
+# ---- ADVANCED BACKGROUND STYLING ----
 background_style = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background-color: #f2f4f6;
+    background-image: url('https://www.transparenttextures.com/patterns/blizzard.png');
+    background-color: #f5f7fa;
+    background-blend-mode: overlay;
+    background-size: cover;
     padding: 2rem;
-    border: 2px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
 }
 [data-testid="stHeader"] {
-    background-color: rgba(255,255,255,0.5);
+    background-color: rgba(255, 255, 255, 0.9);
 }
 [data-testid="stSidebar"] {
-    background-color: #f9f9f9;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(5px);
+}
+.css-1aumxhk {
+    background-color: rgba(255,255,255,0.92);
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 </style>
 """
+
 st.markdown(background_style, unsafe_allow_html=True)
 
-st.title("🤖 Personalized Career Chatbot")
-
-# ---- OPENAI CLIENT ----
+# ---- CONSTANTS ----
+USER_DB = "users.xlsx"
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
+
+# ---- AUTH FUNCTIONS ----
+def load_users():
+    if not os.path.exists(USER_DB):
+        df = pd.DataFrame(columns=["email_or_phone", "password"])
+        df.to_excel(USER_DB, index=False)
+    return pd.read_excel(USER_DB)
+
+def save_user(email_or_phone, password):
+    df = load_users()
+    if email_or_phone not in df["email_or_phone"].values:
+        df.loc[len(df)] = [email_or_phone, password]
+        df.to_excel(USER_DB, index=False)
+
+def authenticate(email_or_phone, password):
+    df = load_users()
+    match = df[(df["email_or_phone"] == email_or_phone) & (df["password"] == password)]
+    return not match.empty
+
+def get_user_password(email_or_phone):
+    df = load_users()
+    row = df[df["email_or_phone"] == email_or_phone]
+    return row.iloc[0]["password"] if not row.empty else None
+
+# ---- LOGIN PAGE ----
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+if not st.session_state["authenticated"]:
+    st.title("🔐 Welcome to Career Bot")
+
+    tab1, tab2 = st.tabs(["Login", "Register"])
+
+    with tab1:
+        login_method = st.radio("Login with:", ["Email", "Phone"])
+        email_or_phone = st.text_input(f"{login_method}")
+        password = st.text_input("Password", type="password")
+
+        col1, col2 = st.columns([1, 2])
+        if col1.button("Login"):
+            if authenticate(email_or_phone, password):
+                st.success("✅ Login successful.")
+                st.session_state["authenticated"] = True
+                st.session_state["user"] = email_or_phone
+                st.rerun()
+            else:
+                st.error("❌ Invalid credentials.")
+
+        if col2.button("Forgot Password?"):
+            stored_pw = get_user_password(email_or_phone)
+            if stored_pw:
+                st.info("📩 Please contact support to retrieve your password.")
+            else:
+                st.warning("User not found.")
+
+    with tab2:
+        new_email = st.text_input("New Email or Phone")
+        new_password = st.text_input("Create Password", type="password")
+
+        if st.button("Register"):
+            if new_email and new_password:
+                save_user(new_email, new_password)
+                st.success("✅ Account created! Please login.")
+            else:
+                st.warning("Please fill both fields.")
+    st.stop()
+
+# ---- MAIN PAGE ----
+st.title("🤖 Personalized Career Chatbot")
 
 # ---- PARSERS ----
 def extract_text_from_pdf(file):
@@ -91,14 +170,33 @@ Job Description:
 
 # ---- JOB MATCHING ----
 def suggest_jobs(cv_text):
+    region = "UAE"
     keywords = ["data analyst", "project manager", "software engineer", "business analyst", "healthcare consultant"]
     matches = [role.title() for role in keywords if role in cv_text.lower()]
     if not matches:
         matches = random.sample(keywords, 2)
+
     return [
-        f"🔹 [{role} at ABC Corp](https://www.linkedin.com/jobs/search/?keywords={role.replace(' ', '%20')})"
+        f"🔹 [LinkedIn: {role}](https://www.linkedin.com/jobs/search/?keywords={urllib.parse.quote_plus(role)}&location={region})\n"
+        f"🔹 [Google Jobs](https://www.google.com/search?q={urllib.parse.quote_plus(role + ' jobs in ' + region)})\n"
+        f"🔹 [Naukri](https://www.naukri.com/{'-'.join(role.lower().split())}-jobs-in-{region.lower()})"
         for role in matches
     ]
+
+# ---- RESUME SCORE ----
+def evaluate_resume(cv_text):
+    prompt = f"""
+You are a resume reviewer. Evaluate the following resume on a 0–100 scale based on current job market standards. Give a score and 5 clear suggestions for improvement.
+
+Resume:
+{cv_text[:2000]}
+"""
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7,
+    )
+    return response.choices[0].message.content.strip()
 
 # ---- SAMPLE CVs ----
 def get_sample_cv():
@@ -111,14 +209,14 @@ def get_sample_cv():
 with st.sidebar:
     st.image("https://img.icons8.com/nolan/64/ai.png", width=60)
     st.header("Career Bot Menu")
-    user_email = st.text_input("📧 Enter your Email (optional):")
     menu_option = st.radio("Choose a Feature:", [
         "Upload Resume",
         "Generate LinkedIn Summary",
         "Mock Interview Q&A",
         "Interview Prep using JD",
         "Job Suggestions",
-        "Download & Preview Sample CVs"
+        "Download & Preview Sample CVs",
+        "Resume Score & Feedback"
     ])
 
 # ---- FILE UPLOAD ----
@@ -177,5 +275,20 @@ elif menu_option == "Download & Preview Sample CVs":
     else:
         st.warning("No sample CVs found. Please add files to the `sample_cvs` folder.")
 
+elif menu_option == "Resume Score & Feedback" and cv_text:
+    st.subheader("📊 Resume Evaluation")
+    with st.spinner("Reviewing resume..."):
+        feedback = evaluate_resume(cv_text)
+    st.text_area("📈 Score & Suggestions", feedback, height=500)
+
 elif menu_option == "Upload Resume" and not uploaded_file:
     st.warning("📎 Please upload your resume to proceed.")
+
+# ---- FOOTER ----
+st.markdown("---")
+st.markdown("""
+**For Help & Contact:**  
+📧 personalizedcareerchatbot@gmail.com  
+📱 +971-0556691831 (WhatsApp & Phone)  
+🔗 [LinkedIn Profile](https://www.linkedin.com/in/shubham-shinde-27m1996)
+""")
