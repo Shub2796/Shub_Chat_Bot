@@ -12,31 +12,51 @@ import urllib.parse
 st.set_page_config(page_title="Career Bot", layout="wide")
 
 # ---- ADVANCED BACKGROUND STYLING ----
+
 background_style = """
 <style>
+/* Light Background Image or Solid Color */
 [data-testid="stAppViewContainer"] {
-    background-image: url('https://www.transparenttextures.com/patterns/blizzard.png');
-    background-color: #f5f7fa;
-    background-blend-mode: overlay;
+    background-image: url('https://images.unsplash.com/photo-1581093458791-6c02fc843dc6?auto=format&fit=crop&w=1950&q=80');
     background-size: cover;
-    padding: 2rem;
-    backdrop-filter: blur(10px);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
-[data-testid="stHeader"] {
+
+/* Slight white overlay for readability */
+.stApp {
+    background-color: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(3px);
+}
+
+/* Sidebar and Header light blur */
+[data-testid="stHeader"], [data-testid="stSidebar"] {
+    background-color: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+/* Set all font colors to black */
+h1, h2, h3, h4, h5, h6, p, label, span, div, button, input, textarea {
+    color: #000000 !important;
+}
+
+/* Input and textarea styling */
+input, textarea {
     background-color: rgba(255, 255, 255, 0.9);
+    color: #000000;
+    border: 1px solid #000000;
 }
-[data-testid="stSidebar"] {
-    background-color: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(5px);
-}
-.css-1aumxhk {
-    background-color: rgba(255,255,255,0.92);
-    padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+/* Button styling */
+button {
+    background-color: #f0f0f0;
+    color: #000000 !important;
+    border: 1px solid #000000;
 }
 </style>
 """
+
 
 st.markdown(background_style, unsafe_allow_html=True)
 
@@ -74,7 +94,7 @@ if "authenticated" not in st.session_state:
 if not st.session_state["authenticated"]:
     st.title("🔐 Welcome to Career Bot")
 
-    tab1, tab2 = st.tabs(["Login", "Register"])
+    tab1, tab2 = st.tabs(["🤖 Login", "📊 Register"])
 
     with tab1:
         login_method = st.radio("Login with:", ["Email", "Phone"])
@@ -108,10 +128,8 @@ if not st.session_state["authenticated"]:
                 st.success("✅ Account created! Please login.")
             else:
                 st.warning("Please fill both fields.")
-    st.stop()
 
-# ---- MAIN PAGE ----
-st.title("🤖 Personalized Career Chatbot")
+    st.stop()
 
 # ---- PARSERS ----
 def extract_text_from_pdf(file):
@@ -216,7 +234,8 @@ with st.sidebar:
         "Interview Prep using JD",
         "Job Suggestions",
         "Download & Preview Sample CVs",
-        "Resume Score & Feedback"
+        "Resume Score & Feedback",
+        "Premium Career Services"
     ])
 
 # ---- FILE UPLOAD ----
@@ -281,13 +300,30 @@ elif menu_option == "Resume Score & Feedback" and cv_text:
         feedback = evaluate_resume(cv_text)
     st.text_area("📈 Score & Suggestions", feedback, height=500)
 
+elif menu_option == "Premium Career Services":
+    st.subheader("💼 Premium Career Guidance Services")
+    st.markdown("""
+    We provide the following premium services:
+
+    - 🔍 Personalized company hiring insights
+    - 🧑‍💼 Direct HR contacts and connections
+    - 📝 Resume & cover letter 1-on-1 consultations
+    - 📞 Mock interview sessions with experts
+    - 🎯 Job strategy & application roadmap sessions
+    - 🌍 International job market guidance
+    - 🗂️ LinkedIn profile review and optimization
+    - 🧭 Career transition planning
+
+    👉 For access and pricing, please reach out:
+    """)
+
 elif menu_option == "Upload Resume" and not uploaded_file:
     st.warning("📎 Please upload your resume to proceed.")
 
 # ---- FOOTER ----
 st.markdown("---")
 st.markdown("""
-**For Help & Contact:**  
+**For career support and consultation Contact:**  
 📧 personalizedcareerchatbot@gmail.com  
 📱 +971-0556691831 (WhatsApp & Phone)  
 🔗 [LinkedIn Profile](https://www.linkedin.com/in/shubham-shinde-27m1996)
