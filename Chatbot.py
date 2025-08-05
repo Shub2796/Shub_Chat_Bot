@@ -10,6 +10,19 @@ import urllib.parse
 
 # ---- CONFIG ----
 st.set_page_config(page_title="Career Bot", layout="wide")
+st.markdown("""
+    <style>
+    /* Make the sidebar (slider) background solid */
+    section[data-testid="stSidebar"] {
+        background-color: #f5f5f5 !important;
+    }
+
+    /* Make all text in sidebar black */
+    section[data-testid="stSidebar"] * {
+        color: #000000 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # ---- ADVANCED BACKGROUND STYLING ----
 
