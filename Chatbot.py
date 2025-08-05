@@ -25,10 +25,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---- ADVANCED BACKGROUND STYLING ----
-
 background_style = """
 <style>
-/* Light Background Image or Solid Color */
 [data-testid="stAppViewContainer"] {
     background-image: url('https://images.unsplash.com/photo-1581093458791-6c02fc843dc6?auto=format&fit=crop&w=1950&q=80');
     background-size: cover;
@@ -37,31 +35,26 @@ background_style = """
     background-attachment: fixed;
 }
 
-/* Slight white overlay for readability */
 .stApp {
     background-color: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(3px);
 }
 
-/* Sidebar and Header light blur */
 [data-testid="stHeader"], [data-testid="stSidebar"] {
     background-color: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(4px);
 }
 
-/* Set all font colors to black */
 h1, h2, h3, h4, h5, h6, p, label, span, div, button, input, textarea {
     color: #000000 !important;
 }
 
-/* Input and textarea styling */
 input, textarea {
     background-color: rgba(255, 255, 255, 0.9);
     color: #000000;
     border: 1px solid #000000;
 }
 
-/* Button styling */
 button {
     background-color: #f0f0f0;
     color: #000000 !important;
@@ -69,80 +62,10 @@ button {
 }
 </style>
 """
-
-
 st.markdown(background_style, unsafe_allow_html=True)
 
 # ---- CONSTANTS ----
-USER_DB = "users.csv"
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
-
-# ---- AUTH FUNCTIONS ----
-def load_users():
-    if not os.path.exists(USER_DB):
-        df = pd.DataFrame(columns=["email_or_phone", "password"])
-        df.to_csv(USER_DB, index=False)
-    return pd.read_csv(USER_DB)
-
-def save_user(email_or_phone, password):
-    df = load_users()
-    if email_or_phone not in df["email_or_phone"].values:
-        df.loc[len(df)] = [email_or_phone, password]
-        df.to_csv(USER_DB, index=False)
-
-def authenticate(email_or_phone, password):
-    df = load_users()
-    match = df[(df["email_or_phone"] == email_or_phone) & (df["password"] == password)]
-    return not match.empty
-
-def get_user_password(email_or_phone):
-    df = load_users()
-    row = df[df["email_or_phone"] == email_or_phone]
-    return row.iloc[0]["password"] if not row.empty else None
-
-# ---- LOGIN PAGE ----
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
-
-if not st.session_state["authenticated"]:
-    st.title("🔐 Welcome to Career Bot")
-
-    tab1, tab2 = st.tabs(["🤖 Login", "📊 Register"])
-
-    with tab1:
-        login_method = st.radio("Login with:", ["Email", "Phone"])
-        email_or_phone = st.text_input(f"{login_method}")
-        password = st.text_input("Password", type="password")
-
-        col1, col2 = st.columns([1, 2])
-        if col1.button("Login"):
-            if authenticate(email_or_phone, password):
-                st.success("✅ Login successful.")
-                st.session_state["authenticated"] = True
-                st.session_state["user"] = email_or_phone
-                st.rerun()
-            else:
-                st.error("❌ Invalid credentials.")
-
-        if col2.button("Forgot Password?"):
-            stored_pw = get_user_password(email_or_phone)
-            if stored_pw:
-                st.info("📩 Please contact support to retrieve your password.")
-            else:
-                st.warning("User not found.")
-
-    with tab2:
-        new_email = st.text_input("New Email or Phone")
-        new_password = st.text_input("Create Password", type="password")
-
-        if st.button("Register"):
-            if new_email and new_password:
-                save_user(new_email, new_password)
-                st.success("✅ Account created! Please login.")
-            else:
-                st.warning("Please fill both fields.")
-
-    st.stop()
 
 # ---- PARSERS ----
 def extract_text_from_pdf(file):
@@ -318,14 +241,14 @@ elif menu_option == "Premium Career Services":
     st.markdown("""
     We provide the following premium services:
 
-    - 🔍 Personalized company hiring insights
-    - 🧑‍💼 Direct HR contacts and connections
-    - 📝 Resume & cover letter 1-on-1 consultations
-    - 📞 Mock interview sessions with experts
-    - 🎯 Job strategy & application roadmap sessions
-    - 🌍 International job market guidance
-    - 🗂️ LinkedIn profile review and optimization
-    - 🧭 Career transition planning
+    - 🔍 Personalized company hiring insights  
+    - 🧑‍💼 Direct HR contacts and connections  
+    - 📝 Resume & cover letter 1-on-1 consultations  
+    - 📞 Mock interview sessions with experts  
+    - 🎯 Job strategy & application roadmap sessions  
+    - 🌍 International job market guidance  
+    - 🗂️ LinkedIn profile review and optimization  
+    - 🧭 Career transition planning  
 
     👉 For access and pricing, please reach out:
     """)
