@@ -61,21 +61,21 @@ button {
 st.markdown(background_style, unsafe_allow_html=True)
 
 # ---- CONSTANTS ----
-USER_DB = "users.xlsx"
+USER_DB = "users.csv"
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 # ---- AUTH FUNCTIONS ----
 def load_users():
     if not os.path.exists(USER_DB):
         df = pd.DataFrame(columns=["email_or_phone", "password"])
-        df.to_excel(USER_DB, index=False)
-    return pd.read_excel(USER_DB)
+        df.to_csv(USER_DB, index=False)
+    return pd.read_csv(USER_DB)
 
 def save_user(email_or_phone, password):
     df = load_users()
     if email_or_phone not in df["email_or_phone"].values:
         df.loc[len(df)] = [email_or_phone, password]
-        df.to_excel(USER_DB, index=False)
+        df.to_csv(USER_DB, index=False)
 
 def authenticate(email_or_phone, password):
     df = load_users()
